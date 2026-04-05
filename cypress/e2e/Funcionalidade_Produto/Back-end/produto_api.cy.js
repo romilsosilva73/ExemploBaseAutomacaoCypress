@@ -161,8 +161,9 @@ describe('ServeRest - Back-end - produto_api', () => {
         cy.cadastrarProdutoApi(token, payload).then((resPost) => {
           const idProduto = resPost.body._id;
 
-          cy.excluirProdutoApi(token, idProduto).then((resDel) => {
-            expect(resDel.body.message, 'Mensagem de confirmação da exclusão').to.eq('Registro excluído com sucesso');
+          // A validação de status e mensagem da exclusão já é feita internamente por excluirProdutoApi (commands.js).
+          // Não é necessário repetir o expect aqui — a responsabilidade está no comando.
+          cy.excluirProdutoApi(token, idProduto).then(() => {
 
             // VALIDAÇÃO: Tenta buscar o produto excluído e confirma que a API retorna erro (não encontrado)
             cy.buscarProdutoPorIdNaoEncontradoApi(idProduto).then(() => {
