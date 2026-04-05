@@ -68,11 +68,13 @@ Cypress.on('uncaught:exception', (err, runnable) => {
   const ehErroEsperado = ERROS_ESPERADOS.some(e => err.message.includes(e));
 
   if (ehErroEsperado) {
-    cy.log(`⚠️ Erro esperado (ignorado): ${err.message}`);
+    // console.warn em vez de cy.log: este handler é síncrono e cy.log (assíncrono)
+    // não pode ser usado aqui — causaria comportamento imprevisível na fila de comandos.
+    console.warn(`⚠️ Erro esperado (ignorado): ${err.message}`);
     return false; // Não falha o teste
   }
 
   // Erros desconhecidos falham o teste
-  cy.log(`❌ Erro inesperado detectado: ${err.message}`);
+  console.error(`❌ Erro inesperado detectado: ${err.message}`);
   return true; // Falha o teste
 });

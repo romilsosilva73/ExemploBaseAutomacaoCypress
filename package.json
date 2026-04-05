@@ -8,6 +8,9 @@
   },
   "author": "Romilso Silva",
   "license": "ISC",
+  "engines": {
+    "node": ">=22"
+  },
   "devDependencies": {
     "cypress": "^14.5.4",
     "cypress-mochawesome-reporter": "^3.8.2",

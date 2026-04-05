@@ -45,7 +45,7 @@ describe('ServeRest - Back-end - produto_api', () => {
               nome: `${nomeProdutoUnico} Editado`
             };
 
-            cy.editarProdutoApi(authToken, idProduto, payloadEditado).then((resPut) => {
+            cy.editarProdutoApi(authToken, idProduto, payloadEditado).then(() => {
 
               cy.log('✅ SUCESSO - Etapa 3: Informações do produto alteradas.');
 
@@ -55,12 +55,12 @@ describe('ServeRest - Back-end - produto_api', () => {
                 cy.log('✅ Edição confirmada no banco de dados.');
 
                 // 4. EXCLUIR PRODUTO (DELETE)
-                cy.excluirProdutoApi(authToken, idProduto).then((resDelete) => {
+                cy.excluirProdutoApi(authToken, idProduto).then(() => {
 
                   cy.log(`✅ SUCESSO - Etapa 4: Produto ${idProduto} removido.`);
 
                   // 5. LIMPEZA FINAL: Remover o usuário admin para manter a base limpa
-                  cy.excluirUsuarioApi(idAdmin).then((resExcluirAdmin) => {
+                  cy.excluirUsuarioApi(idAdmin).then(() => {
                     cy.log(`✅ SUCESSO - Etapa 5: Admin ${idAdmin} removido.`);
                   });
                 });
@@ -165,7 +165,7 @@ describe('ServeRest - Back-end - produto_api', () => {
             expect(resDel.body.message, 'Mensagem de confirmação da exclusão').to.eq('Registro excluído com sucesso');
 
             // VALIDAÇÃO: Tenta buscar o produto excluído e confirma que a API retorna erro (não encontrado)
-            cy.buscarProdutoPorIdApiErro400(idProduto).then(() => {
+            cy.buscarProdutoPorIdNaoEncontradoApi(idProduto).then(() => {
               cy.log(`✅ Produto ${idProduto} removido com sucesso.`);
               // LIMPEZA: Remove o usuário admin criado durante o teste
               cy.excluirUsuarioApi(idUsuario);
@@ -177,6 +177,86 @@ describe('ServeRest - Back-end - produto_api', () => {
 
 
   });
+
+  describe('Cenários Negativos', () => {
+
+    // Os cenários abaixo validam que a API rejeita corretamente requisições inválidas.
+    // Cada teste cobre um tipo diferente de erro: payload, autenticação e formato de ID.
+
+    it('5. POST com campo obrigatório ausente deve retornar 400', () => {
+      // SETUP: Token necessário para confirmar que o 400 é por payload, não por falta de auth
+      cy.obterTokenAdmin().then((auth) => {
+        const { token, idUsuario } = auth;
+
+        // AÇÃO: Envia um produto sem o campo 'nome' (campo obrigatório)
+        cy.cadastrarProdutoPayloadInvalidoApi(token, loc.ServeRest.Produto_Invalido).then((res) => {
+
+          // VALIDAÇÃO: Confirma que a API retornou o erro específico do campo ausente
+          expect(res.body.nome, 'Campo "nome" deve retornar mensagem de obrigatório').to.eq('nome é obrigatório');
+          cy.log('✅ API rejeitou corretamente o payload sem campo obrigatório.');
+          // LIMPEZA: Remove o usuário admin criado durante o teste
+          cy.excluirUsuarioApi(idUsuario);
+        });
+      });
+    });
+
+
+    it('6. PUT com token inválido deve retornar 401', () => {
+      // SETUP: Cria um produto real para garantir que o 401 vem da auth, não de recurso inexistente
+      cy.obterTokenAdmin().then((auth) => {
+        const { token, idUsuario } = auth;
+        const payload = { ...loc.ServeRest.Produto, nome: `Produto Token Invalido ${Date.now()}` };
+
+        cy.cadastrarProdutoApi(token, payload).then((resPost) => {
+          const idProduto = resPost.body._id;
+
+          // AÇÃO: Tenta editar o produto usando um token inválido no header
+          cy.editarProdutoTokenInvalidoApi(idProduto, loc.ServeRest.Produto_Edicao).then(() => {
+            cy.log('✅ API rejeitou corretamente a edição com token inválido.');
+            // LIMPEZA: Remove o produto e o usuário admin criados durante o teste
+            cy.excluirProdutoApi(token, idProduto);
+            cy.excluirUsuarioApi(idUsuario);
+          });
+        });
+      });
+    });
+
+
+    it('7. DELETE sem token deve retornar 401', () => {
+      // SETUP: Cria um produto real para garantir que o 401 vem da auth, não de recurso inexistente
+      cy.obterTokenAdmin().then((auth) => {
+        const { token, idUsuario } = auth;
+        const payload = { ...loc.ServeRest.Produto, nome: `Produto Sem Token ${Date.now()}` };
+
+        cy.cadastrarProdutoApi(token, payload).then((resPost) => {
+          const idProduto = resPost.body._id;
+
+          // AÇÃO: Tenta excluir o produto sem informar nenhum token no header
+          cy.excluirProdutoSemTokenApi(idProduto).then(() => {
+            cy.log('✅ API rejeitou corretamente a exclusão sem token.');
+            // LIMPEZA: Remove o produto e o usuário admin criados durante o teste
+            cy.excluirProdutoApi(token, idProduto);
+            cy.excluirUsuarioApi(idUsuario);
+          });
+        });
+      });
+    });
+
+
+    it('8. GET com ID malformado deve retornar 400', () => {
+      // Neste cenário não há SETUP de produto — o ID inválido é suficiente para disparar o erro.
+      // Diferença em relação ao teste 4 ('buscarProdutoPorIdNaoEncontradoApi'):
+      //   - Teste 4: ID com formato válido que não existe → API busca no banco → retorna { message: "Produto não encontrado" }
+      //   - Teste 8: ID malformado → API rejeita na validação Joi (antes de buscar) → retorna { _id: "id deve ser um id mongo válido" }
+
+      // AÇÃO: Envia uma string malformada como ID na URL
+      cy.buscarProdutoPorIdMalformadoApi(loc.ServeRest.Strings.id_malformado).then(() => {
+        cy.log('✅ API rejeitou corretamente a busca com ID malformado.');
+      });
+    });
+
+  });
+
 
   // afterEach comentado pois impacta a performance — executa após cada teste mesmo quando não há dados para limpar.
   // A limpeza foi movida para o final de cada teste (inline), mantendo o controle direto sobre o que é deletado.
