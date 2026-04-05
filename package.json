@@ -1,0 +1,27 @@
+{
+  "name": "exemplobasecypress",
+  "version": "1.0.0",
+  "description": "Este repositório contém uma estrutura de automação híbrida utilizando Cypress, abrangendo testes de Front-end (Web) e Back-end (API).",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/romilsosilva73/ExemploBaseAutomacaoCypress.git"
+  },
+  "author": "Romilso Silva",
+  "license": "ISC",
+  "devDependencies": {
+    "cypress": "^14.5.4",
+    "cypress-mochawesome-reporter": "^3.8.2",
+    "cypress-multi-reporters": "^1.6.4",
+    "mocha-junit-reporter": "^2.2.1",
+    "mochawesome-merge": "^4.3.0",
+    "mochawesome-report-generator": "^6.2.0"
+  },
+  "scripts": {
+    "cy:open": "cypress open",
+    "test:all": "cypress run --spec 'cypress/e2e/**/*.cy.js'",
+    "test:api": "cypress run --spec 'cypress/e2e/*/Back-end/*.cy.js'",
+    "test:web": "cypress run --spec 'cypress/e2e/*/Front-end/*.cy.js'",
+    "test:produto": "cypress run --spec 'cypress/e2e/Funcionalidade_Produto/**'",
+    "test:login": "cypress run --spec 'cypress/e2e/Funcionalidade_Usuario_e_Login/**'"
+  }
+}

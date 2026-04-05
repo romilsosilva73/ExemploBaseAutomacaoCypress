@@ -1,0 +1,8 @@
+node_modules/
+cypress/videos/
+cypress/screenshots/
+cypress/reports/junit
+cypress/reports/html
+
+# BOAS PRATICAS - Em projetos reais, descomente a linha abaixo para nao commitar credenciais:
+# cypress.env.json
